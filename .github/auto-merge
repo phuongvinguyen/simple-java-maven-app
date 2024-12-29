@@ -1,0 +1,31 @@
+name: Auto Merge Dependabot PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' || github.actor == 'snyk-bot' || github.actor == 'renovate[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Automate Merge
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { exec } = require("child_process");
+            const prNumber = process.env.GITHUB_REF.split("/")[2];
+            const repo = process.env.GITHUB_REPOSITORY;
+
+            const { owner, repo: repository } = repo.split("/");
+            const octokit = require("@actions/github").getOctokit(process.env.GITHUB_TOKEN);
+
+            await octokit.rest.pulls.merge({
+              owner,
+              repo: repository,
+              pull_number: prNumber,
+            });
